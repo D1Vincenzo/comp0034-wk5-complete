@@ -80,7 +80,7 @@ def new_region(app):
             db.session.delete(new_region)
             db.session.commit()
 
-
+# Modified to return the user_id as well as the user_json
 @pytest.fixture(scope='session')
 def new_user(app):
     """Create a new user and add to the database.
@@ -97,8 +97,9 @@ def new_user(app):
         user.set_password(user_json['password'])
         db.session.add(user)
         db.session.commit()
+        user_id = user.id
 
-    yield user_json
+    yield user_json, user_id
 
     # Remove the region from the database at the end of the test if it still exists
     with app.app_context():

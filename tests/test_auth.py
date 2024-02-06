@@ -11,14 +11,16 @@ def test_register_success(client, random_user_json):
     user_register = client.post('/register', json=random_user_json, content_type="application/json")
     assert user_register.status_code == 201
 
-
+# Modified to return the user_id as well as the user_json
 def test_login_success(client, new_user):
     """
     GIVEN a valid format email and password for a user already registered
     WHEN /login is called
     THEN the status code should be 201
     """
-    user_register = client.post('/login', json=new_user, content_type="application/json")
+    user_json, user_id = new_user
+    assert user_id == 1
+    user_register = client.post('/login', json=user_json, content_type="application/json")
     assert user_register.status_code == 201
 
 
