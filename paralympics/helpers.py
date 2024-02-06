@@ -46,8 +46,8 @@ def encode_auth_token(user_id):
         token = jwt.encode(
             # Sets the token to expire in 5 mins
             payload={
-                "exp": datetime.datetime.now(datetime.UTC) + datetime.timedelta(minutes=5),
-                "iat": datetime.datetime.now(datetime.UTC),
+                "exp": datetime.datetime.utcnow() + datetime.timedelta(days=0, seconds=5),
+                "iat": datetime.datetime.utcnow(),
                 "sub": user_id,
             },
             # Flask app secret key, matches the key used in the decode() in the decorator
