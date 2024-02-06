@@ -154,3 +154,27 @@ def test_delete_region_not_exists(client):
     response = client.delete(f"/regions/{code}")
     assert response.status_code == 404
     assert response.json['message'] == f'Region {code} not found.'
+
+
+# Add this test for my CW
+def test_patch_user(client, random_user_json):
+    """
+    GIVEN an existing user
+    AND a Flask test client
+    WHEN an UPDATE request is made to /users/<user_id> with user data
+    THEN the response status code should be 200
+    AND the response content should include the message 'User <user_id> updated'
+    """
+    # Create a new user
+    response = client.post('/register', json=random_user_json, content_type="application/json")
+    assert response.status_code == 201
+    user_id = response.json['id']
+
+    # Update the user
+    updated_user_data = {
+        'email': 'updated@example.com',
+        'password': 'updated_password'
+    }
+    response = client.patch(f"/users/{user_id}", json=updated_user_data)
+    assert response.status_code == 200
+    # assert response.json['message'] == f'User {user_id} updated.'

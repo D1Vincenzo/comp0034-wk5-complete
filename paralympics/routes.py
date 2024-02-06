@@ -252,6 +252,21 @@ def event_update(event_id):
     response = {"message": f"Event with id={event_id} updated."}
     return response
 
+# Add this route for my CW
+@app.delete('/users/<int:user_id>')
+def delete_user(user_id):
+    """ Deletes the user with the given id.
+
+    Args:
+        user_id (int): The id of the user to delete
+    Returns:
+        JSON
+    """
+    user = db.session.execute(db.select(User).filter_by(id=user_id)).scalar_one()
+    db.session.delete(user)
+    db.session.commit()
+    return {"message": f"User {user_id} deleted."}
+
 
 # AUTHENTICATION ROUTES
 @app.post("/register")
@@ -280,9 +295,10 @@ def register():
             # Return success message
             response = {
                 "message": "Successfully registered.",
+                "id": user.id
             }
             # Log the registered user
-            app.logger.info(f"{user.email} registered at {datetime.datetime.now(datetime.UTC)}")
+            app.logger.info(f"{user.email} registered at {datetime.datetime.utcnow()}")
             return make_response(jsonify(response)), 201
         except exc.SQLAlchemyError as e:
             app.logger.error(f"A SQLAlchemy database error occurred: {str(e)}")
@@ -327,3 +343,49 @@ def login():
 
     # Return the token and the user_id of the logged in user
     return make_response(jsonify({"user_id": user.id, "token": token}), 201)
+
+
+# Add this route for my CW
+@app.patch("/users/<int:user_id>")
+def update_user(user_id):
+    """Update the email and/or password of an existing user
+
+    If successful, return 200 OK.
+    If the user does not exist, return 404 Not Found.
+    If the new email already exists, return 409 Conflict.
+    If any other error occurs, return 500 Server error.
+    """
+    # Get the JSON data from the request
+    user_json = request.get_json()
+    new_email = user_json.get("email")
+    new_password = user_json.get("password")
+
+    try:
+        # Find the user by user_id
+        user = db.session.query(User).filter_by(id=user_id).first()
+        
+        if not user:
+            return make_response(jsonify({"message": "User not found."})), 404
+
+        # Update email if provided and it's different from the current one
+        if new_email and new_email != user.email:
+            # Check if the new email already exists
+            if db.session.query(db.exists().where(User.email == new_email)).scalar():
+                return make_response(jsonify({"message": "Email already in use."})), 409
+            user.email = new_email
+
+        # Update password if provided
+        if new_password:
+            user.set_password(new_password)
+        
+        # Commit changes to the database
+        db.session.commit()
+        
+        # Log the update
+        app.logger.info(f"User {user_id} updated at {datetime.datetime.utcnow()}")
+        
+        return make_response(jsonify({"message": "User updated successfully."})), 200
+
+    except exc.SQLAlchemyError as e:
+        app.logger.error(f"A database error occurred: {str(e)}")
+        return make_response(jsonify({"message": "An error occurred. Please try again."})), 500
